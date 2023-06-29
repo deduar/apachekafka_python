@@ -1,0 +1,26 @@
+# ZOOKEPER
+docker run -it --rm --name myZookeeper -p 2181:2181 --network kafka jplock/zookeeper
+
+# KAFKA
+docker run -it --rm --name myKafka -p 7203:7203 -p 9092:9092 --network kafka  -e KAFKA_ADVERTISED_HOST_NAME=myKafka -e ZOOKEEPER_IP=myZookeeper ches/kafka
+
+# Create topic
+docker run --network kafka --rm ches/kafka kafka-topics.sh --create --topic senz --replication-factor 1 --partition 1 --zookeeper myZookeeper:2181
+# List topic
+docker run --rm --network kafka ches/kafka kafka-topics.sh --list -zookeeper myZookeeper:2181
+
+#Producer
+docker run --rm -it --network kafka ches/kafka kafka-console-producer.sh --topic senz --broker-list myKafka:9092
+
+#Consumer
+docker run --rm -it --network kafka ches/kafka kafka-console-consumer.sh --topic senz --from-beginning --zookeeper myZookeeper:2181
+
+--------------
+#Start Consumer
+python -m consumer senz
+
+#Start Producer
+python -m producer NFLX.csv senz 5
+
+#Delete and Recreate the Topic
+docker run --rm --network kafka ches/kafka kafka-configs.sh --zookeeper myZookeeper --alter --entity-name senz --entity-type topics --add-config retention.ms=6000
