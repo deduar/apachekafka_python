@@ -1,6 +1,7 @@
 from kafka import KafkaProducer
 import time
 import json
+import requests
 
 from .reader.data_reader import Reader
 
@@ -16,8 +17,12 @@ class Producer:
     def start_write(self):
         for index, value in self.reader.data.iterrows():
             dict_data = dict(value)
-            self.producer.send(self.topic, value=dict_data)
-            print(f'Message {index + 1}: {dict_data}')
+            # self.producer.send(self.topic, value=dict_data)
+            headers = {'Accept-Encoding': 'UTF-8', 'Content-Type': 'application/json'}
+            dict_data["amount"] = str(dict_data["amount"])
+            r = requests.post('http://myServiceCO2:8080/CFPEstimate', headers=headers, data=json.dumps(dict_data))
+            # print(f'Message {index + 1}: {r.json()}')
+            self.producer.send(self.topic, value=r.json())
             time.sleep(self.freq)
 
 if __name__ == '__main__':

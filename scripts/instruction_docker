@@ -9,18 +9,37 @@ docker run --network kafka --rm ches/kafka kafka-topics.sh --create --topic senz
 # List topic
 docker run --rm --network kafka ches/kafka kafka-topics.sh --list -zookeeper myZookeeper:2181
 
-#Producer
+# Producer
 docker run --rm -it --network kafka ches/kafka kafka-console-producer.sh --topic senz --broker-list myKafka:9092
 
-#Consumer
+# Consumer
 docker run --rm -it --network kafka ches/kafka kafka-console-consumer.sh --topic senz --from-beginning --zookeeper myZookeeper:2181
 
 --------------
-#Start Consumer
+# Start Consumer
 python -m consumer senz
 
-#Start Producer
+# Start Producer
 python -m producer NFLX.csv senz 5
 
 #Delete and Recreate the Topic
 docker run --rm --network kafka ches/kafka kafka-configs.sh --zookeeper myZookeeper --alter --entity-name senz --entity-type topics --add-config retention.ms=6000
+
+# APP
+docker run -it --rm --network kafka --name myApp -v $(pwd):/app python:3.9.4 /bin/bash
+pip iinstall -r requeriments.txt
+
+# APP start consumenr
+python -m consumer senz 
+
+# APP start producer
+# ARGS : file_name, topic, freq
+python -m produccer NFLX.csv senz 1
+
+
+# SERVICE-CO2
+# BUILD Image
+docker build -t service-co2:2.1.9 .
+# Starta container
+docker run -it --rm --name myServiceCO2 --network kafka -p 8080:8080 -v $(pwd):/app service-co2:2.1.9 /bin/bash
+bash start.sh
