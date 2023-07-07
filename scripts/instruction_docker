@@ -27,7 +27,7 @@ docker run --rm --network kafka ches/kafka kafka-configs.sh --zookeeper myZookee
 
 # APP
 docker run -it --rm --network kafka --name myApp -v $(pwd):/app python:3.9.4 /bin/bash
-pip iinstall -r requeriments.txt
+pip install -r requeriments.txt
 
 # APP start consumenr
 python -m consumer senz 
@@ -43,3 +43,21 @@ docker build -t service-co2:2.1.9 .
 # Starta container
 docker run -it --rm --name myServiceCO2 --network kafka -p 8080:8080 -v $(pwd):/app service-co2:2.1.9 /bin/bash
 bash start.sh
+
+docker run -it --rm --name my_aba-cfp_2 --network kafka aba-cfp:0.0.1
+
+*********
+minikube stop
+minikube delete
+minikube start
+minikube image load aba-cfp:0.0.1
+helm install aba-cfp --namespace aba-cfp --create-namespace ./helm
+minikube dashboard
+
+************
+docker run -d --rm --name myZookeeper -p 2181:2181 --network kafka jplock/zookeeper 
+docker run -d --rm --name myKafka -p 7203:7203 -p 9092:9092 --network kafka  -e KAFKA_ADVERTISED_HOST_NAME=myKafka -e ZOOKEEPER_IP=myZookeeper ches/kafka
+docker run -it --rm --name my_aba-cfp_2 --network kafka aba-cfp:0.0.1
+docker run --rm -it --network kafka ches/kafka kafka-console-producer.sh --topic aba_cfp_consumer --broker-list myKafka:9092
+docker run --rm -it --network kafka ches/kafka kafka-console-consumer.sh --topic senz --from-beginning --zookeeper myZookeeper:2181
+docker run --rm --network kafka ches/kafka kafka-configs.sh --zookeeper myZookeeper --alter --entity-name aba_cfp_producer --entity-type topics --add-config retention.ms=6
